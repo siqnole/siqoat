@@ -3,7 +3,7 @@
 // @namespace    https://siqnole.dev
 // @version      0.2.0
 // @description  A modern, cute, enhancement layer for Stoat.
-// @match        https://stoat.chat/app*
+// @match        https://stoat.chat/*
 // @run-at       document-start
 // @grant        GM_addStyle
 // ==/UserScript==
