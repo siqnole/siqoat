@@ -1,0 +1,8 @@
+{
+  "name": "Interact",
+  "description": "Ctrl-click emojis, then click normally to send a Stoat interaction message.",
+  "entry": "interact.user.js",
+  "version": "0.1.0",
+  "kind": "plugin",
+  "targets": ["stoat.chat"]
+}
