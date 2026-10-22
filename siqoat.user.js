@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Siqoat
 // @namespace    https://siqnole.dev
-// @version      0.2.0
-// @description  A modern, cute, enhancement layer for Stoat.
+// @version      0.3.0
+// @description  Siqoat settings hub for Stoat themes and plugins.
 // @match        https://stoat.chat/*
 // @run-at       document-start
 // @grant        GM_addStyle
@@ -17,6 +17,10 @@
     lilacLight: '#dfd2ff', lavender: '#cbb8f4', pink: '#e6bfdc', mint: '#bad9d2'
   };
   const mono = '"IBM Plex Mono", "SFMono-Regular", "Cascadia Mono", "Roboto Mono", Consolas, monospace';
+  const REPO = 'siqnole/siqoat';
+  const BRANCH = 'main';
+  const RAW_ROOT = `https://raw.githubusercontent.com/${REPO}/${BRANCH}/`;
+  const TREE_API = `https://api.github.com/repos/${REPO}/git/trees/${BRANCH}?recursive=1`;
 
   GM_addStyle(`
     :root {
@@ -79,6 +83,10 @@
     #siqoat-settings-panel .siqoat-card + .siqoat-card { margin-top: 10px; }
     #siqoat-settings-panel .siqoat-card-title { color: ${palette.text}; font-size: 13px; font-weight: 600; }
     #siqoat-settings-panel .siqoat-card-copy { margin-top: 5px; color: ${palette.gray}; font-size: 11px; line-height: 1.5; }
+    #siqoat-settings-panel .siqoat-card-meta { margin-top: 7px; color: ${palette.gray}; opacity: .78; font-size: 10px; }
+    #siqoat-settings-panel .siqoat-card-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    #siqoat-settings-panel .siqoat-card-button { display: inline-block; border: 1px solid ${palette.line}; border-radius: 8px; padding: 6px 9px; background: ${palette.panel}; color: ${palette.lilacLight} !important; font: inherit; font-size: 10px; text-decoration: none; cursor: pointer; }
+    #siqoat-settings-panel .siqoat-card-button:hover { border-color: ${palette.lilacLight}; background: #574b70; }
     #siqoat-settings-panel .siqoat-status { display: inline-flex; align-items: center; margin-top: 11px; color: ${palette.mint}; font-size: 10px; }
     #siqoat-settings-panel .siqoat-status::before { content: ''; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: ${palette.mint}; box-shadow: 0 0 9px ${palette.mint}; }
   `);
@@ -92,33 +100,63 @@
     return heading?.parentElement || null;
   }
 
-  function settingsContentHost(category) {
-    let node = category;
-    for (let depth = 0; node && depth < 5; depth += 1, node = node.parentElement) {
-      const sibling = [...(node.parentElement?.children || [])].find(child => child !== node && child.querySelector?.('main, [role="main"]'));
-      if (sibling) return sibling.querySelector('main, [role="main"]') || sibling;
+  function settingsContentHost() {
+    const overlay = document.querySelector('.settings_overlay');
+    const sidebar = overlay?.querySelector('.settings_sidebar');
+    if (!overlay || !sidebar) return null;
+    return [...overlay.children].find(child => child !== sidebar) || null;
+  }
+
+  const rawUrl = path => RAW_ROOT + path.split('/').map(encodeURIComponent).join('/');
+  const repoUrl = path => `https://github.com/${REPO}/blob/${BRANCH}/${path.split('/').map(encodeURIComponent).join('/')}`;
+
+  function packageCard(pkg) {
+    const card = document.createElement('div');
+    card.className = 'siqoat-card';
+    card.innerHTML = `<div class="siqoat-card-title"></div><div class="siqoat-card-copy"></div><div class="siqoat-card-meta"></div><div class="siqoat-card-actions"></div>`;
+    card.querySelector('.siqoat-card-title').textContent = pkg.name;
+    card.querySelector('.siqoat-card-copy').textContent = pkg.description || `Siqoat ${pkg.kind} package.`;
+    card.querySelector('.siqoat-card-meta').textContent = `${pkg.folder}/ · ${pkg.entry.split('/').pop()}`;
+    const actions = card.querySelector('.siqoat-card-actions');
+    const install = document.createElement('a'); install.className = 'siqoat-card-button'; install.textContent = 'Install'; install.href = rawUrl(pkg.entry); install.target = '_blank'; install.rel = 'noopener';
+    const source = document.createElement('a'); source.className = 'siqoat-card-button'; source.textContent = 'Source'; source.href = repoUrl(pkg.entry); source.target = '_blank'; source.rel = 'noopener';
+    actions.append(install, source);
+    return card;
+  }
+
+  async function loadPackages(panel) {
+    const response = await fetch(TREE_API, { headers: { Accept: 'application/vnd.github+json' }, cache: 'no-store' });
+    if (!response.ok) throw new Error(`GitHub returned ${response.status}`);
+    const tree = await response.json();
+    const blobs = (tree.tree || []).filter(item => item.type === 'blob' && /^(themes|plugins)\//.test(item.path));
+    const folders = new Map();
+    blobs.forEach(file => { const parts = file.path.split('/'); if (parts.length >= 3) { const folder = parts.slice(0, 2).join('/'); if (!folders.has(folder)) folders.set(folder, []); folders.get(folder).push(file); } });
+    const packages = [];
+    for (const [folder, files] of folders) {
+      const kind = folder.split('/')[0] === 'plugins' ? 'plugins' : 'themes';
+      const manifestFile = files.find(file => file.path === `${folder}/manifest.json`);
+      let manifest = {};
+      if (manifestFile) { try { manifest = await fetch(rawUrl(manifestFile.path)).then(r => r.ok ? r.json() : ({})); } catch (_) {} }
+      const scripts = files.filter(file => /\.(user|tm)?\.js$/i.test(file.path));
+      const entryFile = files.find(file => file.path === `${folder}/index.user.js`) || files.find(file => file.path === `${folder}/main.user.js`) || scripts[0];
+      if (!entryFile) continue;
+      packages.push({ kind, folder, entry: manifest.entry ? `${folder}/${manifest.entry}` : entryFile.path, name: manifest.name || folder.split('/').pop(), description: manifest.description || '' });
     }
-    return document.querySelector('main, [role="main"]');
+    for (const kind of ['themes', 'plugins']) {
+      const view = panel.querySelector(`[data-view="${kind}"]`);
+      const matches = packages.filter(pkg => pkg.kind === kind);
+      view.replaceChildren();
+      if (!matches.length) { const empty = document.createElement('div'); empty.className = 'siqoat-card-copy'; empty.textContent = `No ${kind} found in the repository yet.`; view.appendChild(empty); }
+      else matches.forEach(pkg => view.appendChild(packageCard(pkg)));
+    }
   }
 
   function panelMarkup() {
     const panel = document.createElement('section');
     panel.id = 'siqoat-settings-panel';
-    panel.innerHTML = `
-      <div class="siqoat-kicker">siqoat ✦</div>
-      <h1>Make Stoat yours</h1>
-      <p class="siqoat-subtitle">Soft themes, tiny comforts, and carefully chosen plugins. Everything here is local to your browser and designed to feel like it belongs in Stoat.</p>
-      <div class="siqoat-tabs"><button class="siqoat-tab" data-tab="themes" data-selected="true">Themes</button><button class="siqoat-tab" data-tab="plugins">Plugins</button></div>
-      <div data-view="themes">
-        <div class="siqoat-card"><div class="siqoat-card-title">Theme shelf</div><div class="siqoat-card-copy">Purple Gray, Autumn Leaves, and Christmas Snow will appear here as Siqoat packages are installed.</div><div class="siqoat-status">Siqoat host is running</div></div>
-      </div>
-      <div data-view="plugins" hidden>
-        <div class="siqoat-card"><div class="siqoat-card-title">Plugin shelf</div><div class="siqoat-card-copy">Plugins such as Interact can be installed separately and managed from this page.</div></div>
-      </div>`;
-    panel.querySelectorAll('.siqoat-tab').forEach(tab => tab.addEventListener('click', () => {
-      panel.querySelectorAll('.siqoat-tab').forEach(item => item.dataset.selected = String(item === tab));
-      panel.querySelectorAll('[data-view]').forEach(view => { view.hidden = view.dataset.view !== tab.dataset.tab; });
-    }));
+    panel.innerHTML = `<div class="siqoat-kicker">siqoat ✦</div><h1>Make Stoat yours</h1><p class="siqoat-subtitle">Soft themes, tiny comforts, and carefully chosen plugins. Everything is packaged in the Siqoat repository.</p><div class="siqoat-tabs"><button class="siqoat-tab" data-tab="themes" data-selected="true">Themes</button><button class="siqoat-tab" data-tab="plugins">Plugins</button></div><div data-view="themes"><div class="siqoat-card-copy">Loading themes…</div></div><div data-view="plugins" hidden><div class="siqoat-card-copy">Loading plugins…</div></div>`;
+    panel.querySelectorAll('.siqoat-tab').forEach(tab => tab.addEventListener('click', () => { panel.querySelectorAll('.siqoat-tab').forEach(item => item.dataset.selected = String(item === tab)); panel.querySelectorAll('[data-view]').forEach(view => { view.hidden = view.dataset.view !== tab.dataset.tab; }); }));
+    loadPackages(panel).catch(error => panel.querySelectorAll('[data-view]').forEach(view => { view.replaceChildren(Object.assign(document.createElement('div'), { className: 'siqoat-card-copy', textContent: `Could not load ${view.dataset.view}: ${error.message}` })); }));
     return panel;
   }
 
@@ -134,11 +172,13 @@
     const label = [...entry.querySelectorAll('*')].find(node => node.textContent?.trim() === template.textContent?.trim());
     if (label) label.textContent = 'Siqoat';
     else entry.textContent = 'Siqoat';
-    const icon = entry.querySelector('svg, img');
-    if (icon) icon.replaceWith(Object.assign(document.createElement('span'), { className: 'siqoat-settings-glyph', textContent: '✦' }));
+    entry.querySelectorAll('svg, img').forEach(icon => icon.remove());
+    const glyph = Object.assign(document.createElement('span'), { className: 'siqoat-settings-glyph', textContent: '✦' });
+    const iconSlot = entry.querySelector('div');
+    if (iconSlot) iconSlot.prepend(glyph); else entry.prepend(glyph);
     entry.addEventListener('click', event => {
       event.preventDefault(); event.stopPropagation();
-      const host = settingsContentHost(category);
+      const host = settingsContentHost();
       if (!host) return;
       document.querySelectorAll('#siqoat-settings-entry').forEach(node => node.dataset.active = 'false');
       entry.dataset.active = 'true';
