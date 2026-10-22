@@ -1,0 +1,11 @@
+{
+  "name": "Siqoat",
+  "version": "0.1.0",
+  "description": "A modern, cute enhancement layer for Stoat.",
+  "host": "https://stoat.chat/*",
+  "entry": "siqoat.user.js",
+  "directories": {
+    "themes": "themes",
+    "plugins": "plugins"
+  }
+}
