@@ -1,13 +1,13 @@
 // ==UserScript==
-// @name         Autumn Leaves
-// @namespace    https://github.com/siqnole/siqoat/themes/autumn-leaves
+// @name         Stoat Autumn Leaves
+// @namespace    https://github.com/siqnole/tampermonkey
 // @version      1.0.0
-// @description  Stoat theme with falling leaves.
-// @match        https://stoat.chat/*
+// @description  Purple-gray Stoat theme with gentle falling leaves.
+// @match        https://stoat.chat/app*
 // @run-at       document-start
 // @grant        GM_addStyle
 // @grant        GM_getResourceURL
-// @resource     leaf-shape https://raw.githubusercontent.com/siqnole/siqoat/9bfc40e49397b282a02acac81be2f7841c927383/themes/purple-gray/leaf.svg
+// @resource     leaf-shape https://raw.githubusercontent.com/siqnole/tampermonkey/main/stoat/autumn-leaves/assets/leaf.svg
 // ==/UserScript==
 
 (function () {

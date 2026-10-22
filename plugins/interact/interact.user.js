@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         Interact
-// @namespace    https://siqnole.dev
+// @name         Siqoat Interact
+// @namespace    https://siqoat.local
 // @version      0.1.0
-// @description  Ctrl-click emojis, then click normally to send a native Stoat interaction message.
-// @match        https://stoat.chat/*
+// @description  Ctrl-click emoji choices, then click normally to send a native Stoat interaction message.
+// @match        https://stoat.chat/app*
 // @run-at       document-idle
 // @grant        GM_addStyle
 // ==/UserScript==

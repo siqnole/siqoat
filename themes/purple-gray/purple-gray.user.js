@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         Purple Gray
-// @namespace    https://github.com/siqnole/siqoat/themes/purple-gray
+// @name         Stoat Purple Gray
+// @namespace    https://github.com/siqnole/tampermonkey
 // @version      1.0.0
-// @description  purple-gray Stoat theme.
-// @match        https://stoat.chat/*
+// @description  Soft purple-gray mono-sans Stoat theme.
+// @match        https://stoat.chat/app*
 // @run-at       document-start
 // @grant        GM_addStyle
 // ==/UserScript==

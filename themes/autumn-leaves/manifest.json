@@ -1,0 +1,6 @@
+{
+  "name": "Stoat Autumn Leaves",
+  "description": "Purple-gray Stoat theme with gentle falling leaves.",
+  "entry": "autumn-leaves.user.js",
+  "version": "1.0.0"
+}

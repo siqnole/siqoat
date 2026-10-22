@@ -1,8 +1,8 @@
 {
   "name": "Siqoat",
-  "version": "0.1.0",
-  "description": "A modern, cute enhancement layer for Stoat.",
-  "host": "https://stoat.chat/*",
+  "version": "0.3.0",
+  "description": "A modern, cute mono-gray and lilac enhancement layer for Stoat.",
+  "host": "https://stoat.chat/app*",
   "entry": "siqoat.user.js",
   "directories": {
     "themes": "themes",
