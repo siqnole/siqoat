@@ -7,7 +7,7 @@
 // @run-at       document-start
 // @grant        GM_addStyle
 // @grant        GM_getResourceURL
-// @resource     leaf-shape https://raw.githubusercontent.com/siqnole/tampermonkey/main/stoat/autumn-leaves/assets/leaf.svg
+// @resource     leaf-shape https://raw.githubusercontent.com/siqnole/siqoat/9bfc40e49397b282a02acac81be2f7841c927383/themes/purple-gray/leaf.svg
 // ==/UserScript==
 
 (function () {
